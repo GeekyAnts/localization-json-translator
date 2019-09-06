@@ -8,6 +8,10 @@
     "Localization",
     "Internationalization"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:GeekyAnts/localization-json-translator.git"
+  },
   "author": "Amith MS <amith@geekyants.com>",
   "license": "MIT",
   "bin": {
