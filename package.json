@@ -1,0 +1,22 @@
+{
+  "name": "localization-json-translator",
+  "version": "1.0.0",
+  "description": "A CLI to translate language json files to a different language",
+  "main": "start.js",
+  "keywords": [
+    "CLI",
+    "Localization",
+    "Internationalization"
+  ],
+  "author": "Amith MS <amith@geekyants.com>",
+  "license": "MIT",
+  "bin": {
+    "translate": "start.js"
+  },
+  "dependencies": {
+    "@google-cloud/translate": "^4.1.3",
+    "esm": "^3.2.6",
+    "fs": "0.0.1-security",
+    "inquirer": "^7.0.0"
+  }
+}
