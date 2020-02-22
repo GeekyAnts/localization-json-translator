@@ -14,6 +14,13 @@ const questions = [
   },
   {
     type: "input",
+    name: "translateFrom",
+    default: 'en',
+    message:
+      "Which language is this json? The default is \'en\'. Please provide the 2 character code of the language."
+  },
+  {
+    type: "input",
     name: "translateTo",
     message:
       "Which language would you want to translate this json to? Please provide the 2 character code of the language."
@@ -32,6 +39,7 @@ const questions = [
 
 inquirer.prompt(questions).then(answers => {
   sourceJsonPath = answers.sourceJsonPath;
+  translateFrom = answers.translateFrom;
   translateTo = answers.translateTo;
   projectId = answers.projectId;
   apiKey = answers.apiKey;
@@ -88,7 +96,8 @@ async function translateJson(sourceJson) {
                   sourceJson[key][k],
                   translateTo,
                   projectId,
-                  apiKey
+                  apiKey,
+                  translateFrom
                 );
               } catch (error) {
                 console.log(
