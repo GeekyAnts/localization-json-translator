@@ -5,6 +5,7 @@ import _ from "lodash";
 
 let sourceJsonPath, translateTo, projectId, apiKey;
 
+
 const questions = [
   {
     type: "input",
@@ -29,6 +30,7 @@ const questions = [
     message: "Your google translate API key?"
   }
 ];
+
 
 inquirer.prompt(questions).then(answers => {
   sourceJsonPath = answers.sourceJsonPath;
@@ -76,32 +78,32 @@ async function main() {
 }
 
 async function translateJson(sourceJson) {
-  console.log("Translating...");
+  console.log('Working....')
   for (const key in sourceJson) {
-    if (sourceJson.hasOwnProperty(key)) {
-      if (typeof sourceJson[key] == "object") {
-        for (const k in sourceJson[key]) {
-          if (sourceJson[key].hasOwnProperty(k)) {
-            if (typeof sourceJson[key][k] === "string") {
-              try {
-                sourceJson[key][k] = await translate(
-                  sourceJson[key][k],
-                  translateTo,
-                  projectId,
-                  apiKey
-                );
-              } catch (error) {
-                console.log(
-                  "Something went wrong while translating! Please check your GCP credentials!"
-                );
-                return;
-              }
-            }
-          }
-        }
+    if (typeof sourceJson[key] === "object") {
+      for (const subKey in sourceJson[key]) {
+        sourceJson[key][subKey] = await translate(
+          sourceJson[key][subKey],
+          translateTo,
+          projectId,
+          apiKey,
+        )
       }
+    } else {
+      try {
+        sourceJson[key] = await translate(
+          sourceJson[key],
+          translateTo,
+          projectId,
+          apiKey,
+        )
+      } catch (error) {
+        console.log('error', error);
+      }
+
     }
   }
+
   fs.writeFile(
     `${process.cwd()}/${translateTo}.json`,
     JSON.stringify(sourceJson),
