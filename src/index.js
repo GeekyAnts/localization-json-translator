@@ -1,118 +1,79 @@
-import fs from "fs";
-import translate from "./translate";
-import inquirer from "inquirer";
-import _ from "lodash";
+import fs from 'fs';
+import askQuestions from './questions';
+import translateToDestinationLang from './translate';
+import './ErrorHandler';
 
-let sourceJsonPath, translateTo, projectId, apiKey;
+const main = async () => {
+  const userResponses = await askQuestions();
+  console.log('Translating...');
 
+  const destinationFileName = `${process.cwd()}/${
+    userResponses.translateTo
+  }.json`;
 
-const questions = [
-  {
-    type: "input",
-    name: "sourceJsonPath",
-    message:
-      "Please provide the path to your base json file. Relative(./relative/path) or Absolute(/absolute/path) will do."
-  },
-  {
-    type: "input",
-    name: "translateTo",
-    message:
-      "Which language would you want to translate this json to? Please provide the 2 character code of the language."
-  },
-  {
-    type: "input",
-    name: "projectId",
-    message: "Your GCP project id?."
-  },
-  {
-    type: "input",
-    name: "apiKey",
-    message: "Your google translate API key?"
-  }
-];
+  const sourceFileContent = readFileContents(userResponses.sourceJsonPath);
 
+  console.log('Working hard...');
 
-inquirer.prompt(questions).then(answers => {
-  sourceJsonPath = answers.sourceJsonPath;
-  translateTo = answers.translateTo;
-  projectId = answers.projectId;
-  apiKey = answers.apiKey;
-  main();
-});
-
-async function main() {
-  if (
-    sourceJsonPath.substring(0, 1) === "/" ||
-    sourceJsonPath.substring(0, 2) === "./"
-  ) {
-    if (sourceJsonPath.substring(0, 2) === "./") {
-      sourceJsonPath = `${process.cwd()}/${sourceJsonPath.substring(
-        2,
-        sourceJsonPath.length
-      )}`;
-    }
-  } else {
-    console.log(
-      "Please specify the source path in these formats -  ./relative/path/from/current/dir or /absolute/path"
+  const output = await translateSource(
+    JSON.parse(sourceFileContent),
+    userResponses
+    // eslint-disable-next-line no-unused-vars
+  ).catch((error) => {
+    throw new Error(
+      'Something went wrong while translating. Please check your language code, and gcloud credentials!'
     );
-  }
+  });
 
-  if (fs.existsSync(sourceJsonPath)) {
-    fs.readFile(sourceJsonPath, "utf-8", (err, sourceJson) => {
-      if (err) {
-        console.log("Something went wrong while opening your source File!");
-        return;
-      }
-      try {
-        translateJson(JSON.parse(sourceJson));
-      } catch (error) {
-        console.log("Something went wrong with the Google Translate API!");
-      } finally {
-        return;
-      }
-    });
+  try {
+    writeFile(output, destinationFileName);
+    console.log('Finished translating!');
+  } catch (error) {
+    throw new Error('Could not write to file!');
+  }
+};
+
+const readFileContents = (filePath) => {
+  if (fs.existsSync(filePath)) {
+    const fileContents = fs.readFileSync(filePath, 'utf-8');
+    return fileContents;
   } else {
-    console.log("Oops! Something went wrong.");
-    return;
+    throw new Error('File not found!');
   }
-}
+};
 
-async function translateJson(sourceJson) {
-  console.log('Working....')
-  for (const key in sourceJson) {
-    if (typeof sourceJson[key] === "object") {
-      for (const subKey in sourceJson[key]) {
-        sourceJson[key][subKey] = await translate(
-          sourceJson[key][subKey],
-          translateTo,
-          projectId,
-          apiKey,
-        )
-      }
-    } else {
-      try {
-        sourceJson[key] = await translate(
-          sourceJson[key],
-          translateTo,
-          projectId,
-          apiKey,
-        )
-      } catch (error) {
-        console.log('error', error);
-      }
-
-    }
-  }
-
-  fs.writeFile(
-    `${process.cwd()}/${translateTo}.json`,
-    JSON.stringify(sourceJson),
-    err => {
-      if (err) {
-        console.log("Something went wrong while writing to a file!");
-        return err;
-      }
-      console.log("Done!");
-    }
+const writeFile = (translatedObject, fileName) => {
+  const writeFileOutput = fs.writeFileSync(
+    fileName,
+    JSON.stringify(translatedObject)
   );
-}
+  return writeFileOutput;
+};
+
+const isValidObject = (obj) => typeof obj === 'object' && obj !== null;
+const isString = (string) => typeof string === 'string';
+
+const translateSource = async (sourceObject, userResponses) => {
+  let obj = sourceObject;
+
+  if (isValidObject(sourceObject)) {
+    obj = { ...sourceObject };
+
+    for (var keys in obj) {
+      if (isValidObject(obj[keys])) {
+        obj[keys] = await translateSource(obj[keys], userResponses);
+      } else if (isString(obj[keys])) {
+        let keyValue = await translateToDestinationLang(
+          obj[keys],
+          userResponses.translateTo,
+          userResponses.projectId,
+          userResponses.apiKey
+        );
+        obj[keys] = keyValue;
+      }
+    }
+  }
+  return obj;
+};
+
+main();
