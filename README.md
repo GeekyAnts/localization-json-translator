@@ -11,10 +11,7 @@ Helps you convert your \<language>\.json file from one language to any other lan
 
 # How to use this?
 
-1. The easiest way is to use it from npm. Run the following command in your terminal -
-   `npm install translate -g`
-
-2. The other way is to clone this repo. Run `npm install -g`.
+Clone the repo and run `npm install -g`.
 
 After this is done, the command `translate` will be available globally in your terminal.
 
